@@ -80,5 +80,29 @@ namespace PokerService.Hubs
             await Clients.All.SendAsync("destroy");
             await Clients.All.SendAsync("cardsTakenOut", players);
         }
+
+        public async Task DealCards() {
+            var currentCards = _cache.Get<List<Card>>("currentCards") ?? Helper.GetAllCards();
+
+            if (currentCards.Count == 0)
+            {
+                await Clients.All.SendAsync("deckEmpty");
+                _cache.Set("currentCards", Helper.GetAllCards());
+                return;
+            }
+
+            var random = new Random();
+            var newCards = new List<Card>();
+
+            for (var i = 0; i < 5; i++) {
+                var index = random.Next(0, currentCards.Count);
+                newCards.Add(currentCards[index]);
+                currentCards.RemoveAt(index);
+            }
+
+            _cache.Set("currentCards", currentCards);
+
+            await Clients.All.SendAsync("newCardsDealed", newCards);
+        }
     }
 }
